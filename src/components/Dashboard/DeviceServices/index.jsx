@@ -7,8 +7,17 @@ import { useParams } from "react-router-dom";
 
 import { avatarColorMap, iconMap, textColorMap } from "../common";
 import DeviceSwitch from "./DeviceSwitch";
+import { useEffect, useMemo, useState } from "react";
+import dayjs from "dayjs";
+import TempratureChart from "../common/TempratuteChart";
+import TempChart from "../common/TempratureChart";
 
-const columns = [
+const getLast7Entries = (arr = []) => {
+  if (arr.length <= 7) return arr;
+  return arr.slice(-7);
+};
+
+const FixedColumns = [
   {
     key: "commonName",
     title: "Service Name",
@@ -58,7 +67,7 @@ const columns = [
       const status = data || "UNKNOWN";
 
       return (
-        <div className="flex items-center gap-3 w-[70px]">
+        <div className="flex items-center gap-3 w-[100px]">
           <Tooltip title={tooltipMap[status]}>
             <div className="flex items-center gap-3">
               <Avatar size="small" className={avatarColorMap[status]}>
@@ -75,6 +84,10 @@ const columns = [
       );
     },
   },
+];
+
+const SwitchesColumns = [
+  ...FixedColumns,
   {
     key: "switch",
     title: "Switch",
@@ -83,23 +96,91 @@ const columns = [
   },
 ];
 
+const SensorsColumns = (sensorData) => [
+  ...FixedColumns,
+  {
+    key: "value",
+    title: "Value",
+    dataIndex: "parsed",
+    render: (value) => <div>{value}</div>,
+  },
+  {
+    key: "chart",
+    title: "Live Overview",
+    dataIndex: "service_id",
+    render: (service_id) => <TempChart data={sensorData?.[service_id] || []} />,
+  },
+];
+
 const DeviceServices = () => {
   const { deviceId } = useParams();
+  const [sensorData, setSensorData] = useState({});
 
-  const { loading, error, data } = useQuery(GET_ALL_SERVICES_OF_DEVICE, {
+  const allDeciveServiceQuery = useQuery(GET_ALL_SERVICES_OF_DEVICE, {
     variables: { deviceId },
-    pollInterval: 10000,
+    pollInterval: 15000,
   });
 
+  const { loading, data } = allDeciveServiceQuery;
+
+  useEffect(() => {
+    if (data?.getAllServicesByDeviceId) {
+      setSensorData((prevData) => {
+        const newData = { ...prevData };
+        data.getAllServicesByDeviceId.forEach((service) => {
+          if (service.serviceType === "sensor") {
+            if (!newData[service.service_id]) {
+              newData[service.service_id] = [];
+            }
+            newData[service.service_id] = getLast7Entries([
+              ...newData[service.service_id],
+              {
+                time: dayjs(new Date()).format("hh:mm:ss A"),
+                value: Number(parseFloat(service.value).toFixed(2)),
+              },
+            ]);
+          }
+        });
+
+        return newData;
+      });
+    }
+  }, [data]);
+
+  const switches = useMemo(
+    () =>
+      data?.getAllServicesByDeviceId.filter(
+        (item) => item.serviceType === "switch"
+      ) || [],
+    [data]
+  );
+
+  const sensors = useMemo(
+    () =>
+      data?.getAllServicesByDeviceId.filter(
+        (item) => item.serviceType === "sensor"
+      ) || [],
+    [data, sensorData]
+  );
+
   return (
-    <Table
-      loading={loading}
-      columns={columns}
-      dataSource={data?.getAllServicesByDeviceId || []}
-      pagination={
-        data?.getAllServicesByDeviceId.length <= 8 ? false : { pageSize: 8 }
-      }
-    />
+    <>
+      <Typography.Title level={4}>Switches</Typography.Title>
+      <Table
+        loading={loading}
+        dataSource={switches}
+        columns={SwitchesColumns}
+        pagination={switches.length <= 8 ? false : { pageSize: 8 }}
+      />
+      <br />
+      <Typography.Title level={4}>Sensors</Typography.Title>
+      <Table
+        loading={loading}
+        dataSource={sensors}
+        columns={SensorsColumns(sensorData)}
+        pagination={sensors.length <= 8 ? false : { pageSize: 8 }}
+      />
+    </>
   );
 };
 

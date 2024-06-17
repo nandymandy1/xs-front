@@ -75,7 +75,7 @@ const AddDevice = () => {
               {message}
             </Typography.Text>
           ),
-          placement: "topRight",
+          duration: 2,
           description: "We have found your device.",
         });
       },
@@ -87,7 +87,7 @@ const AddDevice = () => {
               Device not found
             </Typography.Text>
           ),
-          placement: "topRight",
+          duration: 2,
           description: data?.message || "Unable to find your device.",
         });
         form.setFieldValue("deviceFound", false);
@@ -106,7 +106,7 @@ const AddDevice = () => {
               {message}
             </Typography.Text>
           ),
-          placement: "topRight",
+          duration: 2,
           description: "We have added your device.",
         });
         closeModal();
@@ -118,7 +118,7 @@ const AddDevice = () => {
               Device not added
             </Typography.Text>
           ),
-          placement: "topRight",
+          duration: 2,
           description: data?.message || "Unable to find your device.",
         });
         form.setFieldValue("deviceFound", false);

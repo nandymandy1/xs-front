@@ -1,14 +1,39 @@
 import { useLazyQuery } from "@apollo/client";
 import { AUTHENTICATE_QUERY } from "@graphql/Auth";
-import { Button, Card, Col, Form, Input, Row, Typography } from "antd";
+import {
+  Button,
+  Card,
+  Col,
+  Form,
+  Input,
+  Row,
+  Typography,
+  notification,
+} from "antd";
 import { Link } from "react-router-dom";
 import useAuth from "@store/useAuth";
+import { UserRules } from "./Rules";
 
 const Login = () => {
   const [form] = Form.useForm();
   const { loginUser } = useAuth();
   const [authenticate, authQueryState] = useLazyQuery(AUTHENTICATE_QUERY, {
-    onCompleted: ({ authenticateUser }) => loginUser(authenticateUser),
+    onCompleted: ({ authenticateUser }) => {
+      notification.success({
+        duration: 2,
+        message: "Signed in",
+        description: "You are loggedin successfully.",
+      });
+      loginUser(authenticateUser);
+    },
+    onError: (err) => {
+      console.log(err.message);
+      notification.error({
+        message: err.message,
+        description: "Unable to login.",
+        duration: 2,
+      });
+    },
   });
 
   return (
@@ -40,7 +65,7 @@ const Login = () => {
               <Form.Item
                 name="username"
                 label="Username"
-                rules={[{ required: true, message: "Username is required." }]}
+                rules={UserRules.username}
               >
                 <Input placeholder="Username" size="large" />
               </Form.Item>
@@ -48,13 +73,7 @@ const Login = () => {
                 name="password"
                 label="Password"
                 className="my-10"
-                rules={[
-                  { required: true, message: "Password is required." },
-                  {
-                    min: 8,
-                    message: "Password should atleast have 8 characters.",
-                  },
-                ]}
+                rules={UserRules.password}
               >
                 <Input.Password size="large" placeholder="Password" />
               </Form.Item>

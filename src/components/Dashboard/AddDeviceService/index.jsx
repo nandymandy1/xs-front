@@ -19,6 +19,11 @@ import {
 import { useLazyQuery, useMutation } from "@apollo/client";
 import { useParams } from "react-router-dom";
 
+const ServiceOpts = [
+  { label: "Switch", value: "switch" },
+  { label: "Sensor", value: "sensor" },
+];
+
 const AddDeviceService = () => {
   const [form] = Form.useForm();
   const { deviceId } = useParams();
@@ -39,7 +44,7 @@ const AddDeviceService = () => {
             Service Found
           </Typography.Text>
         ),
-        placement: "topRight",
+        duration: 2,
         description: data?.testDeviceService?.message || "",
       });
     },
@@ -50,7 +55,7 @@ const AddDeviceService = () => {
             Service Not Found
           </Typography.Text>
         ),
-        placement: "topRight",
+        duration: 2,
         description: data?.message || "Unable to find service on device.",
       });
       form.setFieldValue("serviceFound", false);
@@ -66,7 +71,7 @@ const AddDeviceService = () => {
             {message}
           </Typography.Text>
         ),
-        placement: "topRight",
+        duration: 2,
         description: "We have added your device.",
       });
       closeModal();
@@ -78,7 +83,7 @@ const AddDeviceService = () => {
             Service not added
           </Typography.Text>
         ),
-        placement: "topRight",
+        duration: 2,
         description: data?.message || "Unable to find your service on Device.",
       });
       form.setFieldValue("serviceFound", false);
@@ -111,17 +116,19 @@ const AddDeviceService = () => {
       variables: {
         deviceId,
         serviceId: values?.serviceId,
+        serviceType: values?.serviceType,
       },
     });
   };
 
-  const handleAddDeviceService = (values) =>
+  const handleAddDeviceService = (values) => {
     addService({
       variables: {
         ...values,
         deviceId,
       },
     });
+  };
 
   return (
     <>
@@ -145,10 +152,10 @@ const AddDeviceService = () => {
           layout="vertical"
           disabled={addingService}
           onFinish={handleAddDeviceService}
-          initialValues={{ serviceType: "Switch" }}
+          initialValues={{ serviceType: "switch" }}
         >
           <Form.Item name="serviceType" className="w-full my-3">
-            <Segmented block size="large" options={["Switch", "Sensor"]} />
+            <Segmented block size="large" options={ServiceOpts} />
           </Form.Item>
           <Form.Item label="Service Id" name="serviceId">
             <Input size="large" placeholder="Service Id" />
